@@ -1,0 +1,131 @@
+- activemq start ---> to start activemq
+- localhost:8161 admin admin --> console web page
+- JMS (Java Messaging Service)
+  MESSAGE SERVERS:
+	Active MQ
+	Rabbit MQ
+	JBoss MQ
+	Hornet MQ
+	IBM WebSphere MQ
+  MESSAGE TYPES:
+	Text Message
+	Map Message
+	Bytes Messsage
+	Stream Message
+	Object Message
+- Point To Point Model
+	Messages are sent by Producer to queue, where consumer receives Message and returns ack.
+	Message is sent to exactly one subscriber.
+- Publish Subscribe Model
+	Messages are sent by Producer to a topic, where each message is copied and sent to each subscriber. who are subscribed to that topic.
+- JMS API
+	Like JDBC API is interface for mysql,oracle,postgresql db.
+	JMS API supports different MQ's like JBoss MQ, Active MQ, IBM websphere MQ
+- DESTINATION
+	QUEUE --> CLIENT1 ---> QUEUE ---> CLIENT2
+	TOPIC --> CLIENT1 ---> TOPIC ---> CLIENT2
+							|_______> CLIENT3
+
+- JMS API Programming model:
+	- Administered Objects: Connection Factory and Destinations
+			We can create connection using Connection Factory
+			We can create Session using Connection
+			We can create Message Producer/Consumer using Session.
+		* Client uses connection factory to create a session.
+			Queue Connection Factory, Topic Connection Factory
+	- Connections
+	- Sessions
+	- Message Producers
+		* Created using Session.
+		* Used to send message to destination.
+		* Implements MessageProducerInterface.
+	- Message Consumers
+		* Created using Session.
+		* Used to receive message that are sent to a destination.
+		* Implements MessageConsumerInterface.
+	- Message Listeners
+		* Async Event Handler
+		* Implements MessageListenerInterface.
+			onMessage(){
+				WHAT KIND OF ACTION
+			}
+		* We can register a message listener using message consumer using setMessageListener method.
+	- Message Selector
+		* Allows message consumer to specify messages it in interested in.
+		* Messages are filtered at producer before sending.
+
+- DELIVERY MODE:
+	- Persistent/Non Persistent Messages:
+		* Persistent --> messages are stored in a DB until messages are consumed by consumer. Messages even persist even after broker restart.
+		* Non Persistent --> opp to above.
+	- [Only For Topics]
+	  Durable / Non-Durable Subscriptions:
+	    * Durable --> if the consumer is down for some time and if it comes up later. Then all the messages that are sent during down time will also be sent to consumer.
+		* Non-Durable --> only receives the messages that are delivered after consumer come up. i.e. it looses all the data send when the consumer is down.
+
+- POM.XML
+	<dependency>javax.jms-api</dependency>
+	<dependency>activemq-all</dependency>
+
+	WITH SPRING:
+	<dependency>spring-jms</dependency>
+	<dependency>activemq-all</dependency>
+
+- JMS Configuration
+	@configuration
+	public class SampleMessagingConfig{
+
+		public ConnectionFactory connectionFactory(){
+			ActivaMQConnectionFactory x;
+			x.setBrokerURL(xxxx);
+			return x;
+		}
+
+		/*
+			send / receive message from the queue.
+		*/
+		public JmsTemplate jmsTemplate(){
+			JmsTemplate y;
+			y.setConnectionFactory(x);
+			y.setDefaultDestinationName(QUEUE_NAME);
+		}
+
+		MessageConverter converter(){
+			return new SimpleMessageConverter();
+		}
+	}
+
+	jmsTemplate.send(new MessageCreator(){});
+	messageConvertor.fromMessage(jmsTemplate.receive());
+
+- Async message receiving using Messsage Listeners
+	class MessageReceiver implements MessageListener{
+		public void onMessage(Message message){
+			ClassType1 obj = (ClassType1) messageConverter.fromMessage(message);
+		}
+	}
+
+	@configuration
+	public class SampleMessagingConfig{
+		----------------------------------
+		----------------------------------
+
+		public MessageListenerContainer getContainer(){
+			DefaultMessageListenerContainer c;
+			c.setConnectionFactory(x);
+			c.setDestinationName(QUEUE_NAME);
+			/*This calls on Message method of messageReceiver*/
+			c.setMessageListener(messageReceiver);
+		}
+	}
+
+- We can even create a listener using @EnableJms and @JmsLister
+	@EnableJms
+	public class MessageConfig{
+
+	}
+
+	@JmsLister(destination = QUEUE_NAME)
+	public void sampleReceiveMessage(final Message<ClassType1> messages){
+
+	}
